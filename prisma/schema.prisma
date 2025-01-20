@@ -9,3 +9,50 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+// Product model - Represents digital products available for purchase
+model Product {
+  id                     String                 @id @default(uuid())    // Unique identifier
+  name                   String                                         // Product name
+  priceInCents           Int                                           // Price in cents (avoiding decimals)
+  filePath               String                                        // Path to downloadable file
+  imagePath              String                                        // Path to product image
+  description            String                                        // Product description
+  isAvailableForPurchase Boolean                @default(true)         // Product availability status
+  createdAt              DateTime               @default(now())         // Creation timestamp
+  updatedAt              DateTime               @updatedAt              // Last update timestamp
+  orders                 Order[]                                        // Relation to orders
+  downloadVerifications  DownloadVerification[]                        // Relation to download tokens
+}
+
+// User model - Represents registered users of the platform
+model User {
+  id                     String                 @id @default(uuid())    // Unique identifier
+  email                  String                 @unique                 // Unique email address
+  password               String                                        // Hashed password
+  createdAt              DateTime               @default(now())         // Account creation date
+  updatedAt              DateTime               @updatedAt              // Last update timestamp
+  orders                 Order[]                                        // User's purchase history
+}
+
+// Order model - Represents purchase transactions
+model Order {
+  id               String   @id @default(uuid())                        // Unique identifier
+  pricePaidInCents Int                                                // Amount paid in cents
+  createdAt        DateTime @default(now())                            // Order creation date
+  updatedAt        DateTime @updatedAt                                 // Last update timestamp
+
+  userId    String                                                     // Reference to buyer
+  productId String                                                    // Reference to purchased product
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)      // User relation (cascade delete)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)  // Product relation (prevent deletion)
+}
+
+// DownloadVerification model - Manages temporary download access tokens
+model DownloadVerification {
+  id        String   @id @default(uuid())                             // Unique identifier
+  expiresAt DateTime                                                 // Token expiration date
+  createdAt DateTime @default(now())                                 // Token creation date
+  productId String                                                   // Reference to product
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)  // Product relation (cascade delete)
+}
